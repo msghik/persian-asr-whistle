@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+# data and checkpoints live on Google Drive only
+*.pt
+*.ark
+*.scp
+*.arpa
+*.bin
+*.mp3
+*.wav
+*.tar
+*.tar.gz
+*.whl
+data/
+exp/
+.claude/
+build/

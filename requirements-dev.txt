@@ -1,0 +1,19 @@
+# Local CPU testing only (Colab installs are done by notebooks/00_setup.ipynb).
+# torch/torchaudio CPU wheels: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+pytest
+numpy
+nbformat
+nbclient
+ipykernel
+huggingface_hub
+sentencepiece
+kaldiio
+jiwer
+pyyaml
+tqdm
+Levenshtein
+transformers
+tensorboard
+braceexpand
+matplotlib
+jieba

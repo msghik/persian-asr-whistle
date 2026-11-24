@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "persian_asr"
+version = "0.1.0"
+description = "Persian ASR baselines (subword S1/S2, phoneme P0/P1) on top of THU-SPMI CAT / Whistle, run on Google Colab."
+requires-python = ">=3.10"
+# Runtime deps are installed by the notebooks (Colab already ships torch etc.).
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::SyntaxWarning", "ignore::FutureWarning", "ignore::DeprecationWarning"]
