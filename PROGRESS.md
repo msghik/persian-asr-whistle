@@ -3,6 +3,11 @@
 Deadline: short results report to Prof. Zhijian Ou around **2026-12-10**.
 Rule: no number is reported unless a run produced it; failed runs are reported as failed.
 
+## 2026-11-25: moved off Colab
+Colab setup failed in the CAT install cell (the KenLM wheel build; fix pushed in 4c7aedc but never confirmed on Colab).
+The user reserved an RTX 6000 server at UChicago; work continues there with Claude Code running on that machine.
+See `HANDOFF.md` for the full brief. The Colab notebook stays in the repo for reference; server entry points replace it.
+
 ## Status (2026-11-24)
 
 | Step | State |

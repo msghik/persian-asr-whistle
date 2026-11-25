@@ -10,6 +10,7 @@ and **S2** (Whistle-small encoder + new Persian BPE head), with phoneme-based **
 - `scripts/build_kaldi_min.sh`: minimal static Kaldi for CAT's WFST decoding
 - `scripts/run_notebook_locally.py`: runs a notebook on CPU with `google.colab` faked
 - `third_party/cat_ext_stubs/`: import-only stubs for CAT's unused compiled extensions (see its README)
+- `HANDOFF.md`: full project brief (start here in a new session)
 - `PROGRESS.md`: status, findings with CAT file:line references, next steps
 
 Data, features, LMs and checkpoints live only on Google Drive under `MyDrive/persian_asr/`.
