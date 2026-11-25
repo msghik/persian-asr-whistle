@@ -80,6 +80,15 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
 - fa_S2_1h (restarted 09:39 with patch 2): dev_1h loss 30.7 -> 4.67 (step 304) -> 2.53 (1216) -> 2.23 (1656), still
   improving; shape matches the reference Polish curve. Diagnostic only (not a result): greedy on dev_1h with the
   step-1216 checkpoint gave WER 77.99 / CER 36.22, hypotheses are real Persian text.
+- **fa_S2_1h** (done): early stop at step 2248 (best 2016, dev_1h loss 2.12), 53 min train. Test WER/CER greedy
+  76.42/32.03, fa_clean LM (w 0.4, tuned on dev) 61.80/35.56; dev greedy 71.80/28.76, LM 53.92/30.32.
+  LM lowers WER but raises CER vs greedy (to examine in analysis: OOV words replaced by in-vocabulary words?).
+- **fa_S1_1h** (done): never left the blank phase: best dev_1h loss 5.73 at step 320, early stop at 2232. Test WER/CER
+  greedy 99.23/94.69, LM 99.25/94.08. Consistent with CAT's Polish mono subword 1h (98.38% WER).
+- **pl_PL_1h** (Polish reproduction, CV 27.0 pl, CAT pool): early stop at 2261 (best 2240, dev_1h loss 1.40; paper curve
+  min 1.44), 60 min. Test greedy WER/CER 66.44/17.81 (paper: 69.50 with beam 16, no LM). LM `pl_cat` (paper construction,
+  73.3% of test sentences in LM text) 15.16/7.88 at w 0.8; `pl_clean` 42.11/19.06 at w 0.7 (paper: 8.63 at w 1.2).
+  pl_cat's dev sweep tied at the top of the grid (0.8 = 0.9 = 21.10) -> edge rule fixed to extend on ties; re-decoding.
 - Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
   followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.
   Estimated worst case (step caps, 1.3-1.4 s/update): ~18.5 GPU-h -> done ~Nov 26 morning; then full-data runs if time.

@@ -88,7 +88,7 @@ def main() -> None:
                                                                     exp / "decode" / tune / f"fst_{lm}", w).items()}
                 sweep[w] = decoding.score(refs[tune], hyp)["er"]
                 print(f"  {lm} {tune} lmwt {w}: WER {sweep[w]:.2f}")
-                if not weights and min(sweep, key=sweep.get) == max(sweep) and w < 2.0:
+                if not weights and sweep[max(sweep)] <= min(sweep.values()) and w < 2.0:  # best (or tied) at the edge
                     weights.append(round(w + 0.2, 1))  # optimum at the edge: extend the sweep
             best_w = min(sweep, key=sweep.get)
             row["lm_weight"] = best_w
