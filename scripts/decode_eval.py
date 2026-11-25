@@ -34,7 +34,9 @@ def main() -> None:
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--lm", nargs="*", default=[], help="LM names under DATA/lm (built by build_lm.py)")
     ap.add_argument("--sets", nargs="+", default=["dev", "test"], help="first set is used to tune the LM weight")
-    ap.add_argument("--lmwts", nargs="+", type=float, default=[0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.9])
+    # Weights >= 1.1 make latgen-faster very slow (S2 fa 1h dev: 0.3-0.7 ~1.5 min, 1.1 17 min, 1.9 ~60 min)
+    # and were far from the optimum (0.5); the sweep extends upward only if the best weight is the largest.
+    ap.add_argument("--lmwts", nargs="+", type=float, default=[0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
     ap.add_argument("--results", type=Path, default=Path(__file__).resolve().parents[1] / "results" / "results.csv")
     a = ap.parse_args()
 
@@ -78,12 +80,16 @@ def main() -> None:
             lm_dir = catrun.DATA / "lm" / lm
             graph = decoding.build_graph(tok, lm_dir, catrun.DATA / "graph" / f"{tok.stem}__{lm}")
             sweep = {}
-            for w in a.lmwts:
+            weights = list(a.lmwts)
+            while weights:
+                w = weights.pop(0)
                 tune = a.sets[0]  # the LM weight is tuned on the FIRST set only (dev)
                 hyp = {u: norm(h) for u, h in decoding.fst_decode(exp / "decode" / tune / "ark", graph,
                                                                     exp / "decode" / tune / f"fst_{lm}", w).items()}
                 sweep[w] = decoding.score(refs[tune], hyp)["er"]
                 print(f"  {lm} {tune} lmwt {w}: WER {sweep[w]:.2f}")
+                if not weights and min(sweep, key=sweep.get) == max(sweep) and w < 2.0:
+                    weights.append(round(w + 0.2, 1))  # optimum at the edge: extend the sweep
             best_w = min(sweep, key=sweep.get)
             row["lm_weight"] = best_w
             for s in a.sets:
