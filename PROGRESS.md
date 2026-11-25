@@ -104,6 +104,12 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
   Most frequent substitutions at 10h are colloquial -> formal spellings: رو->را (153), هست->است (55), اون->او (53),
   یه->یک (46), اگه->اگر (45), خب->خوب (32); plus می -> می‌کند (space vs ZWNJ in the references themselves).
   Ezafe-marked reference words: only 40 in test (too few to conclude).
+- **fa_S1_10h** (done): early stop at 9401 (best 9164, dev_1h loss 3.29; plateau: 3.49 at 6.2k, LR halved 4x),
+  2.42 h. Test WER/CER greedy 89.55/56.75, LM (w 0.3) 83.26/63.28; ZWNJ-insensitive LM WER 81.71.
+- Full-data queue (tmux `fullq`): S2 fa full started 22:17 with tokenizer `fa_full_bpe500_id` (keeps ZWNJ),
+  check_freq 610; then S1 fa full. (~11 min lost: `tmux has-session -t queue` prefix-matched `queue2`, which waited
+  on itself; run_queue.sh now uses `-t =name`.)
+- `REPORT.md` drafted (one page, numbers from results/ only; full-data rows pending).
 - Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
   followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.
   Estimated worst case (step caps, 1.3-1.4 s/update): ~18.5 GPU-h -> done ~Nov 26 morning; then full-data runs if time.

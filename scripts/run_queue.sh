@@ -8,7 +8,7 @@ PY=$HOME/venvs/asr/bin/python
 DATA=${PERSIAN_ASR_DATA:-$HOME/persian_asr_data}
 LOG=$DATA/logs/queue.log
 if [ -n "${WAIT_FOR:-}" ]; then
-  while tmux has-session -t "$WAIT_FOR" 2>/dev/null; do sleep 60; done
+  while tmux has-session -t "=$WAIT_FOR" 2>/dev/null; do sleep 60; done
 fi
 for job in "$@"; do
   read -r sys lang size <<<"$job"
