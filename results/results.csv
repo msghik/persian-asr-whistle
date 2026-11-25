@@ -1,3 +1,5 @@
 run_id,system,lang,units,hours,train_set,gpu,lm,lm_weight,dev_wer_greedy,dev_cer_greedy,test_wer_greedy,test_cer_greedy,dev_wer_lm,dev_cer_lm,test_wer_lm,test_cer_lm,bpe,final_step,best_step,epochs_approx,stop_reason,train_wall_h,decode_wall_min,date
 fa_S2_1h_bpe500_s0,S2,fa,BPE500,1h,train_1h,Quadro RTX 6000,fa_clean,0.4,71.8,28.76,76.42,32.03,53.92,30.32,61.8,35.56,500,2248,2016,286.3,early stop (CAT TERMINATED),0.89,21.4,2026-11-25
 fa_S1_1h_bpe500_s0,S1,fa,BPE500,1h,train_1h,Quadro RTX 6000,fa_clean,0.2,98.64,94.24,99.23,94.69,98.47,93.51,99.25,94.08,500,2232,320,284.3,early stop (CAT TERMINATED),0.91,19.1,2026-11-25
+pl_PL_1h_bpe500_s0,PL,pl,BPE500,1h,train_1h,Quadro RTX 6000,pl_cat,0.8,68.09,17.41,66.44,17.81,21.1,9.99,15.16,7.88,500,2261,2240,362.2,early stop (CAT TERMINATED),1.0,22.1,2026-11-25
+pl_PL_1h_bpe500_s0,PL,pl,BPE500,1h,train_1h,Quadro RTX 6000,pl_clean,0.7,68.09,17.41,66.44,17.81,38.6,16.62,42.11,19.06,500,2261,2240,362.2,early stop (CAT TERMINATED),1.0,37.2,2026-11-25

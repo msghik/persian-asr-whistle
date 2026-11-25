@@ -88,7 +88,8 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
 - **pl_PL_1h** (Polish reproduction, CV 27.0 pl, CAT pool): early stop at 2261 (best 2240, dev_1h loss 1.40; paper curve
   min 1.44), 60 min. Test greedy WER/CER 66.44/17.81 (paper: 69.50 with beam 16, no LM). LM `pl_cat` (paper construction,
   73.3% of test sentences in LM text) 15.16/7.88 at w 0.8; `pl_clean` 42.11/19.06 at w 0.7 (paper: 8.63 at w 1.2).
-  pl_cat's dev sweep tied at the top of the grid (0.8 = 0.9 = 21.10) -> edge rule fixed to extend on ties; re-decoding.
+  pl_cat's dev sweep tied at the top of the grid (0.8 = 0.9 = 21.10) -> edge rule fixed to extend on ties; re-decoded:
+  w 1.1 gives dev 21.98 (worse), so w 0.8 and the numbers above are final.
 - Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
   followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.
   Estimated worst case (step caps, 1.3-1.4 s/update): ~18.5 GPU-h -> done ~Nov 26 morning; then full-data runs if time.
