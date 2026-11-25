@@ -131,15 +131,30 @@ def apt_install(pkgs: list[str]) -> None:
 
 # --- python deps + CAT --------------------------------------------------------------
 
-def _cached_wheel(cache_dir: Path, pattern: str, build_spec: str, tmp_dir: Path) -> Path:
-    """Return a cached wheel matching `pattern`, building it with `pip wheel` if absent."""
+def _cached_wheel(cache_dir: Path, pattern: str, build_spec: str, tmp_dir: Path,
+                  fallback_build_reqs: tuple[str, ...] = ()) -> Path:
+    """Return a cached wheel matching `pattern`, building it with `pip wheel` if absent.
+
+    Build output is logged in full (no -q) so a failure shows the real compiler/CMake error.
+    If the normal (isolated) build fails and `fallback_build_reqs` is given, those packages
+    are installed and the build is retried once with --no-build-isolation.
+    """
     hits = sorted(cache_dir.glob(pattern))
     if hits:
         return hits[-1]
     log(f"building wheel {build_spec} (first time only)")
     tmp_dir.mkdir(parents=True, exist_ok=True)
-    run([sys.executable, "-m", "pip", "wheel", "-q", "--no-deps", "-w", str(tmp_dir), build_spec],
-        log_file=tmp_dir / "pip_wheel.log")
+    # CMake >= 4 refuses projects declaring cmake_minimum_required < 3.5 unless this is set.
+    env = {"CMAKE_POLICY_VERSION_MINIMUM": "3.5"}
+    cmd = [sys.executable, "-m", "pip", "wheel", "-v", "--no-deps", "-w", str(tmp_dir), build_spec]
+    try:
+        run(cmd, log_file=tmp_dir / "pip_wheel.log", env=env)
+    except RuntimeError:
+        if not fallback_build_reqs:
+            raise
+        log(f"isolated build failed; retrying with --no-build-isolation and {list(fallback_build_reqs)}")
+        pip(*fallback_build_reqs)
+        run(cmd[:4] + ["--no-build-isolation"] + cmd[4:], log_file=tmp_dir / "pip_wheel_retry.log", env=env)
     built = sorted(tmp_dir.glob(pattern))
     if not built:
         raise RuntimeError(f"wheel build produced nothing matching {pattern} in {tmp_dir}")
@@ -179,7 +194,10 @@ def ensure_cat(paths: config.Paths, repo_root: Path) -> Path:
     tmp = paths.local_work / "wheel_build"
     wds = _cached_wheel(wheel_cache, "webdataset-*.whl",
                         f"git+https://github.com/webdataset/webdataset.git@{config.WEBDATASET_COMMIT}", tmp)
-    klm = _cached_wheel(wheel_cache, "kenlm-*.whl", config.KENLM_URL, tmp)
+    if not sorted(wheel_cache.glob("kenlm-*.whl")):
+        apt_install(APT_KENLM)  # compiler-side deps (cmake, zlib/bz2/lzma headers) before building
+    klm = _cached_wheel(wheel_cache, "kenlm-*.whl", config.KENLM_URL, tmp,
+                        fallback_build_reqs=("setuptools", "wheel", "cmake>=3.10,<4"))
 
     ensure_torchaudio()
     log("pip install CAT python deps + cached wheels + extension stubs")

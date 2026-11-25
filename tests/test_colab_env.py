@@ -75,3 +75,26 @@ def test_missing_shared_libs_on_system_binary():
     ls = Path(shutil.which("ls"))
     assert install.missing_shared_libs(ls) == []
     install.ensure_runtime_libs([ls], ["should-not-be-installed"])  # nothing missing -> no apt call
+
+
+def test_cached_wheel_falls_back_to_no_build_isolation(tmp_path, monkeypatch):
+    from persian_asr import install
+    calls = []
+
+    def fake_run(cmd, log_file=None, cwd=None, env=None, tail=60):
+        calls.append(cmd)
+        if "--no-build-isolation" not in cmd:
+            raise RuntimeError("isolated build failed")
+        (tmp_path / "tmp" / "kenlm-0.2.0-cp312-cp312-linux_x86_64.whl").write_bytes(b"x")
+
+    monkeypatch.setattr(install, "run", fake_run)
+    monkeypatch.setattr(install, "pip", lambda *a, **k: calls.append(["pip", *a]))
+    out = install._cached_wheel(tmp_path / "cache", "kenlm-*.whl", "kenlm-src", tmp_path / "tmp",
+                                fallback_build_reqs=("cmake>=3.10,<4",))
+    assert out.is_file() and out.parent == tmp_path / "cache"
+    assert calls[1] == ["pip", "cmake>=3.10,<4"]
+    assert "--no-build-isolation" in calls[2] and "-q" not in calls[2]
+    # second call hits the cache, no build
+    calls.clear()
+    assert install._cached_wheel(tmp_path / "cache", "kenlm-*.whl", "kenlm-src", tmp_path / "tmp") == out
+    assert calls == []
