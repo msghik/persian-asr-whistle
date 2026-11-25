@@ -98,7 +98,10 @@ def write_exp(run_id: str, lang: str, system: str, train_set: str, dev_set: str,
         "env": {"CUDA_VISIBLE_DEVICES": "0"},
         "train": {"bin": "cat.ctc.train",
                   "option": {"amp": True, "batch_size": micro_batch, "grad_accum_fold": fold,
-                             "check_freq": check_freq, "seed": seed, "workers": 4}},
+                             # workers=0: CAT re-creates DataLoader workers every epoch; on a
+                             # loaded 48-thread box that cost ~30 s per epoch (measured), which
+                             # dominates 1h runs (an epoch is ~8 updates). Packed features load fast.
+                             "check_freq": check_freq, "seed": seed, "workers": 0}},
         "inference": {"avgmodel": {"mode": "best", "num": 3}},
         "commit": config.CAT_COMMIT,
     }

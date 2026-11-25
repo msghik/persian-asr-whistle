@@ -16,6 +16,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -112,7 +113,8 @@ def kaldi_env() -> dict:
     kaldi = Path(os.environ.get("KALDI_ROOT", Path.home() / "persian_asr_local/tools/kaldi"))
     kb = [kaldi / "src" / d for d in ("bin", "fstbin", "latbin", "lmbin")] + [kaldi / "tools/openfst/bin"]
     kenlm = Path.home() / "persian_asr_local/tools/kenlm/bin"
-    path = ":".join(str(p) for p in [catrun.CAT_DIR / "src/bin", kenlm, *kb]) + ":" + os.environ["PATH"]
+    venv_bin = Path(sys.executable).parent  # CAT's shell scripts call plain `python`
+    path = ":".join(str(p) for p in [venv_bin, catrun.CAT_DIR / "src/bin", kenlm, *kb]) + ":" + os.environ["PATH"]
     return dict(os.environ, **config.TORCH_ENV, KALDI_ROOT=str(kaldi), PATH=path, LC_ALL="C.UTF-8")
 
 
@@ -135,7 +137,9 @@ def build_word_lm(name: str, lm_text: Path, word_list_texts: list[Path], prune_s
                            "file": str(d / "tokenizer_lm.tknz")},
              "commit": config.CAT_COMMIT}
     (d / "hyper-p.json").write_text(json.dumps(hyper, indent=4))
-    (d / "config.json").write_text(json.dumps({}, indent=4))
+    # ngram.sh stage 3 reads decoder settings from config.json (as exp/Monolingual/pl/lm/config.json)
+    (d / "config.json").write_text(json.dumps({"decoder": {"type": "NGram", "kwargs": {
+        "f_binlm": str(d / "4gram.arpa"), "gram_order": 4, "num_classes": len(words) + 2}}}, indent=4))
     if not (d / "4gram.arpa").exists():
         rel = os.path.relpath(d, ws)
         subprocess.run(["bash", "utils/pipeline/ngram.sh", rel, "-o", "4", "--arpa", "--output",

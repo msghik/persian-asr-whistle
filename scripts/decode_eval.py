@@ -33,7 +33,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--lm", nargs="*", default=[], help="LM names under DATA/lm (built by build_lm.py)")
-    ap.add_argument("--sets", nargs="+", default=["dev", "test"])
+    ap.add_argument("--sets", nargs="+", default=["dev", "test"], help="first set is used to tune the LM weight")
     ap.add_argument("--lmwts", nargs="+", type=float, default=[0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.9])
     ap.add_argument("--results", type=Path, default=Path(__file__).resolve().parents[1] / "results" / "results.csv")
     a = ap.parse_args()
@@ -70,6 +70,8 @@ def main() -> None:
         if info.get("final_step"):
             row["epochs_approx"] = round(info["final_step"] * info["effective_batch"] / n_train, 1)
         for s in a.sets:
+            if f"{s}_wer_greedy" not in FIELDS:
+                continue
             row[f"{s}_wer_greedy"] = out["greedy"][s]["wer"]["er"]
             row[f"{s}_cer_greedy"] = out["greedy"][s]["cer"]["er"]
         if lm:
@@ -77,10 +79,11 @@ def main() -> None:
             graph = decoding.build_graph(tok, lm_dir, catrun.DATA / "graph" / f"{tok.stem}__{lm}")
             sweep = {}
             for w in a.lmwts:
-                hyp = {u: norm(h) for u, h in decoding.fst_decode(exp / "decode/dev/ark", graph,
-                                                                    exp / "decode/dev" / f"fst_{lm}", w).items()}
-                sweep[w] = decoding.score(refs["dev"], hyp)["er"]
-                print(f"  {lm} dev lmwt {w}: WER {sweep[w]:.2f}")
+                tune = a.sets[0]  # the LM weight is tuned on the FIRST set only (dev)
+                hyp = {u: norm(h) for u, h in decoding.fst_decode(exp / "decode" / tune / "ark", graph,
+                                                                    exp / "decode" / tune / f"fst_{lm}", w).items()}
+                sweep[w] = decoding.score(refs[tune], hyp)["er"]
+                print(f"  {lm} {tune} lmwt {w}: WER {sweep[w]:.2f}")
             best_w = min(sweep, key=sweep.get)
             row["lm_weight"] = best_w
             for s in a.sets:
@@ -89,7 +92,8 @@ def main() -> None:
                 (exp / "decode" / s / f"fst_{lm}_best.hyp").write_text("".join(f"{u}\t{hyp[u]}\n" for u in sorted(hyp)))
                 w_ = decoding.score(refs[s], hyp)
                 c_ = decoding.score(refs[s], hyp, cer=True)
-                row[f"{s}_wer_lm"], row[f"{s}_cer_lm"] = w_["er"], c_["er"]
+                if f"{s}_wer_lm" in FIELDS:
+                    row[f"{s}_wer_lm"], row[f"{s}_cer_lm"] = w_["er"], c_["er"]
                 out.setdefault(f"lm_{lm}", {})[s] = {"lmwt": best_w, "wer": w_, "cer": c_, "dev_sweep": sweep}
                 print(f"{a.run_id} {s} {lm} (lmwt {best_w}, tuned on dev)  WER {w_['er']:6.2f}  CER {c_['er']:6.2f}")
         row["decode_wall_min"] = round((time.time() - t0) / 60, 1)

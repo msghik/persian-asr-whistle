@@ -8,6 +8,70 @@ Colab setup failed in the CAT install cell (the KenLM wheel build; fix pushed in
 The user reserved an RTX 6000 server at UChicago; work continues there with Claude Code running on that machine.
 See `HANDOFF.md` for the full brief. The Colab notebook stays in the repo for reference; server entry points replace it.
 
+## 2026-11-25: UChicago server (Chameleon bare-metal lease, ends 2026-11-29; cannot be extended)
+
+**Machine (surveyed):** 1x Quadro RTX 6000 24 GB (Turing, sm_75, no bf16), driver 545.23.08 / CUDA 12.3, Ubuntu 22.04,
+2x Xeon Gold 6126 (48 threads), 187 GB RAM, one 223 GB SSD (no scratch; disk is wiped when the lease ends), passwordless sudo,
+no conda/Slurm/modules. HF, GitHub, PyPI, MDC reachable (HF ~100 MB/s, MDC ~140 MB/s).
+**Persistence:** code -> GitHub branch `worktree-server-pipeline`; data/checkpoints -> Google Drive via `scripts/sync_drive.sh`
+(rclone remote `gdrive`, user sets it up). Raw CV is not copied (MDC re-download takes ~2 min).
+
+**Environment (verified):** Python 3.12 venv via uv (MDC SDK `datacollective` 0.8.1 needs >= 3.11), torch 2.14.1+cu126
+(runs on driver 545, includes sm_75), CAT @2340970f04 + stubs + `scripts/patch_cat.py`, KenLM bins, Kaldi minimal build
+(`scripts/build_kaldi_min.sh`: **built OK in 26 min with 46 jobs, 443 MB after shrink**; first confirmed run of the final script).
+`pytest`: all pass (27 old + 16 new), incl. whistle-small English->IPA on CPU and on GPU (identical output).
+Full recipe: `scripts/setup_server.sh`.
+
+**GPU benchmark (random input, fp16, whistle-small Conformer, V=500):** bs128 x 5 s: 0.58 s/step, 16.4 GB;
+bs64 x 10 s: 0.66 s/step, 17.0 GB; bs96 x 10 s: OOM. Real CAT training (S2 fa 1h, 32x4 accumulation): **1.25 s per update
+incl. per-epoch dev eval** (measured once the CPU load dropped).
+
+### New CAT findings (file:line at CAT 2340970f04)
+10. **CTC loss crashes on torch 2.14:** `cat/ctc/train.py:176-178,195` moves labels/lengths to CPU and calls `nn.CTCLoss`
+    with CUDA log-probs; torch 2.14 raises "Expected all tensors to be on the same device" (verified with a minimal test).
+    Fixed by `scripts/patch_cat.py` (moves them to the logits' device; user approved).
+11. **CAT never deletes checkpoints:** every evaluation saves model+optimizer (~1 GB) (`cat/shared/manager.py:374-378`).
+    `catrun.Watcher` keeps the best 3 by dev loss + the latest (verified on the sanity run).
+12. **DataLoader workers are re-created every epoch:** cost ~30 s per epoch on the loaded box (measured); we use workers=0.
+13. **Polish paper LM contains the test sentences:** the 4-gram is trained on `train_pl` = `data/pl/excluded_train`
+    (`data/metainfo.json`, `exp/Monolingual/pl/lm/hyper-p.json`), i.e. validated ∪ train minus dev/test *clips*
+    (`local/data_prep.sh` stage 1, expect.py), and the LM word list includes all dev/test words (`local/data_prep.sh` stage 3).
+    On CV 27.0 pl the same construction puts **73.3% of test sentences into the LM text** (test OOV 2.09% vs 13.70% clean).
+    This plausibly explains most of 69.50% -> 8.63% (to be measured: PL 1h decoded with `pl_cat` vs `pl_clean`).
+14. `cat/ctc/cal_logit.py:85-104` stores raw logits (CPU, batch 1); we store GPU log_softmax (equivalent for WFST decoding).
+15. `prune_shorter: 5` in the Polish LM config drops LM sentences with < 5 words (`utils/data/pack_corpus.py:94`);
+    kept for pl LMs, not used for the Persian LM (short CV prompts).
+
+### Data findings (CV 27.0, from MDC)
+- **CV 11.0 Polish is not on MDC** (only 27.0) and the HF CV 11.0 mirrors return 401 -> Polish reproduction on CV 27.0 pl.
+- **CV 27.0 fa clip TSVs have ZWNJ deleted** from the sentence column ("می‌شد" -> "میشد"; 15,684 recorded sentences,
+  2,273 in test); `validated_sentences.tsv` keeps it. We take text from there via sentence_id.
+- **Whistle's train convention leaks on fa:** (validated ∪ train) minus dev/test clips puts 97.1% of test sentences and
+  53.7% of test clips' speakers into training. Decision (user delegated): **clean pool** = remove clips whose sentence_id,
+  normalized text or speaker occurs in dev/test. Data card (`prep/fa/data_card.md`):
+
+| set | utts | hours | speakers |
+|---|---|---|---|
+| train_10m / 1h / 10h | 169 / 1005 / 10080 | 0.17 / 1.0 / 10.0 | 65 / 135 / 214 |
+| train_full | 78005 | 77.7 | 261 |
+| dev / test | 10755 / 10755 | 12.64 / 14.77 | 993 / 2850 |
+
+  Leakage of every train subset into dev/test: 0.0% (sentence_id, normalized text, speaker).
+  Word LM `fa_clean`: 78,005 lines, vocab 21,052, dev OOV 7.82%, test OOV 10.38%. Latin-script utts flagged (kept):
+  train 29, dev 10, test 14; no digit utterances.
+- Polish (CAT pool): train_1h 799 utts / 236 spk; dev 10,096; test 10,096. Features: fa 99,515/99,515, pl 20,991/20,991, 0 failures.
+
+### Schedule (identical for S1/S2/PL at a size; user delegated the choice)
+lr 3e-5 Adam(0.9,0.98) wd 1e-6, effective batch 128 (32x4), fp16, SpecAugment as in the recipe, filter 10:2000 frames,
+eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gamma 0.5, stop_lr 1e-6), step cap 6k (1h) /
+20k (10h), average best 3. Tokenizer BPE 500 per (lang, size), shared by S1/S2.
+
+### Runs
+- sanity (S2, 50 utts, lr 3e-5, 400 steps): pipeline ran end to end (pack, train, prune, average, GPU log-probs, greedy,
+  LM, TLG, Kaldi lattice decoding), but the model was still in the CTC blank phase (best dev loss 6.66 at step 120;
+  47/50 empty hyps; WER 100%). Not a valid overfit test; the real 1h run is used as the check instead.
+- fa_S2_1h: running (dev loss 30.7 -> 7.03 by step 104).
+
 ## Status (2026-11-24)
 
 | Step | State |
