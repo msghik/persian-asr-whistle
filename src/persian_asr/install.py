@@ -126,7 +126,8 @@ def apt_install(pkgs: list[str]) -> None:
     if not missing:
         return
     log(f"apt-get install {' '.join(missing)}")
-    run("apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq " + " ".join(missing))
+    sudo = "" if os.geteuid() == 0 else "sudo "  # Colab runs as root; the server user has sudo
+    run(f"{sudo}apt-get update -qq && {sudo}env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq " + " ".join(missing))
 
 
 # --- python deps + CAT --------------------------------------------------------------
