@@ -30,6 +30,12 @@ incl. per-epoch dev eval** (measured once the CPU load dropped).
 10. **CTC loss crashes on torch 2.14:** `cat/ctc/train.py:176-178,195` moves labels/lengths to CPU and calls `nn.CTCLoss`
     with CUDA log-probs; torch 2.14 raises "Expected all tensors to be on the same device" (verified with a minimal test).
     Fixed by `scripts/patch_cat.py` (moves them to the logits' device; user approved).
+10b. **That first fix exposed a wrong CUDA CTC gradient** (torch 2.14 native kernel, called as CAT calls it: transposed
+    non-contiguous log-probs inside fp16 autocast): vs the CPU reference, max abs grad error up to 1.77, norm x120, and
+    non-deterministic garbage on padded frames (t >= input length). The first S2 fa 1h run trained with it: dev loss
+    fell 30.7 -> 6.78 (step 112) then ROSE to 11.5 (step 304); the reference Polish 1h curve plateaus ~5-6 then falls to
+    1.44. Run moved to `exp_invalid/` (not deleted). Patch 2: fp32 + padded frames zeroed via masked_fill + contiguous +
+    autocast off -> grads match CPU to 2.75e-6, padded grads exactly 0, deterministic (`tests/test_cat_ctc_patch.py`).
 11. **CAT never deletes checkpoints:** every evaluation saves model+optimizer (~1 GB) (`cat/shared/manager.py:374-378`).
     `catrun.Watcher` keeps the best 3 by dev loss + the latest (verified on the sanity run).
 12. **DataLoader workers are re-created every epoch:** cost ~30 s per epoch on the loaded box (measured); we use workers=0.
@@ -70,7 +76,7 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
 - sanity (S2, 50 utts, lr 3e-5, 400 steps): pipeline ran end to end (pack, train, prune, average, GPU log-probs, greedy,
   LM, TLG, Kaldi lattice decoding), but the model was still in the CTC blank phase (best dev loss 6.66 at step 120;
   47/50 empty hyps; WER 100%). Not a valid overfit test; the real 1h run is used as the check instead.
-- fa_S2_1h: running (dev loss 30.7 -> 7.03 by step 104).
+- fa_S2_1h (first attempt): INVALID, trained with the wrong CUDA CTC gradient (finding 10b); restarted after patch 2.
 
 ## Status (2026-11-24)
 
