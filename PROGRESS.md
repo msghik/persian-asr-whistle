@@ -90,6 +90,20 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
   73.3% of test sentences in LM text) 15.16/7.88 at w 0.8; `pl_clean` 42.11/19.06 at w 0.7 (paper: 8.63 at w 1.2).
   pl_cat's dev sweep tied at the top of the grid (0.8 = 0.9 = 21.10) -> edge rule fixed to extend on ties; re-decoded:
   w 1.1 gives dev 21.98 (worse), so w 0.8 and the numbers above are final.
+- **fa_S2_10h** (done): early stop at 8690 (best 7505, dev_1h loss 0.856), 2.28 h. Test WER/CER greedy 50.56/15.80,
+  fa_clean LM (w 0.6) 38.85/16.86; dev greedy 43.11/12.43, LM 29.21/11.91.
+- **Tokenizer drops ZWNJ (finding 16):** CAT's SentencePiece tokenizer uses SentencePiece's default nmt_nfkc
+  normalization, which turns ZWNJ into a space (`می‌روم` -> `می روم`; 0 of 500 pieces contain ZWNJ). The fa 1h/10h
+  models therefore never output ZWNJ; greedy error on the 3,015 test reference words with ZWNJ is 100% (S2 1h and 10h).
+  S1 and S2 share the tokenizer, so their comparison is unaffected. `scripts/rescore.py` adds a ZWNJ-insensitive
+  WER/CER (ZWNJ -> space on both sides): S2 10h test greedy 50.56 -> 44.55, LM 38.85 -> 35.10; S2 1h test LM
+  61.80 -> 58.94 (`results/results_rescored.csv`). Full-data tokenizers use `normalization_rule_name=identity`
+  (suffix `_id`; verified: 17 pieces contain ZWNJ, exact round trip on 2,000 training lines).
+- **Error analysis S2 (test, `results/analysis_test_*.md`):** with the word LM every OOV reference word is wrong (100%;
+  test OOV rate 10.38%), greedy OOV-word error 84.64% at 10h; in-vocabulary word error 28.09% (LM) vs 36.90% (greedy).
+  Most frequent substitutions at 10h are colloquial -> formal spellings: رو->را (153), هست->است (55), اون->او (53),
+  یه->یک (46), اگه->اگر (45), خب->خوب (32); plus می -> می‌کند (space vs ZWNJ in the references themselves).
+  Ezafe-marked reference words: only 40 in test (too few to conclude).
 - Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
   followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.
   Estimated worst case (step caps, 1.3-1.4 s/update): ~18.5 GPU-h -> done ~Nov 26 morning; then full-data runs if time.

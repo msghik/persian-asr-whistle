@@ -70,7 +70,15 @@ def n_lines(p: Path) -> int:
 
 def ensure_tokenizer(lang: str, train_set: str, tag: str) -> Path:
     """SentencePiece BPE-500 on the training transcripts (ids stripped), CAT's tokenizer API."""
-    tok = DATA / "tok" / f"{lang}_{tag}_bpe{BPE_SIZE}.tknz"
+    # SentencePiece's default normalization (nmt_nfkc) turns ZWNJ into a space, so a model trained with it can
+    # never output ZWNJ (verified 2026-11-25 on the fa 1h/10h tokenizers). Persian tokenizers created from now
+    # on use normalization_rule_name=identity (text is already normalized by normalize_fa) and carry an "_id"
+    # suffix; existing tokenizers (fa 1h/10h, pl 1h) are kept so S1/S2 at those sizes stay identical.
+    legacy = DATA / "tok" / f"{lang}_{tag}_bpe{BPE_SIZE}.tknz"
+    if legacy.exists():
+        return legacy
+    identity = lang == "fa"
+    tok = DATA / "tok" / f"{lang}_{tag}_bpe{BPE_SIZE}{'_id' if identity else ''}.tknz"
     if tok.exists():
         return tok
     tok.parent.mkdir(parents=True, exist_ok=True)
@@ -80,7 +88,8 @@ def ensure_tokenizer(lang: str, train_set: str, tag: str) -> Path:
     from cat.shared import tokenizer as tknz
     t = tknz.initialize({"type": "SentencePieceTokenizer",
                          "option-train": {"model_type": "bpe", "vocab_size": BPE_SIZE,
-                                          "model_prefix": str(tok.with_suffix("")), "f_text": str(txt)}})
+                                          "model_prefix": str(tok.with_suffix("")), "f_text": str(txt),
+                                          **({"normalization_rule_name": "identity"} if identity else {})}})
     tknz.save(t, str(tok))
     return tok
 
