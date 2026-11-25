@@ -77,6 +77,17 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
   LM, TLG, Kaldi lattice decoding), but the model was still in the CTC blank phase (best dev loss 6.66 at step 120;
   47/50 empty hyps; WER 100%). Not a valid overfit test; the real 1h run is used as the check instead.
 - fa_S2_1h (first attempt): INVALID, trained with the wrong CUDA CTC gradient (finding 10b); restarted after patch 2.
+- fa_S2_1h (restarted 09:39 with patch 2): dev_1h loss 30.7 -> 4.67 (step 304) -> 2.53 (1216) -> 2.23 (1656), still
+  improving; shape matches the reference Polish curve. Diagnostic only (not a result): greedy on dev_1h with the
+  step-1216 checkpoint gave WER 77.99 / CER 36.22, hypotheses are real Persian text.
+- Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
+  followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.
+  Estimated worst case (step caps, 1.3-1.4 s/update): ~18.5 GPU-h -> done ~Nov 26 morning; then full-data runs if time.
+
+## Next steps (2026-11-25)
+1. User: set up the rclone remote `gdrive` (`rclone config`), then `bash scripts/sync_drive.sh` before 2026-11-29.
+2. After each run: check `results/results.csv` (decode_eval appends rows); after S1/S2 10h: `scripts/analysis.py`, REPORT.md.
+3. If time remains after the 10h runs: S1/S2 on train_full (77.7 h; ~610 updates/epoch, cap 40k).
 
 ## Status (2026-11-24)
 
