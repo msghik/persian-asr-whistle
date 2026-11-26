@@ -109,6 +109,10 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
 - Full-data queue (tmux `fullq`): S2 fa full started 22:17 with tokenizer `fa_full_bpe500_id` (keeps ZWNJ),
   check_freq 610; then S1 fa full. (~11 min lost: `tmux has-session -t queue` prefix-matched `queue2`, which waited
   on itself; run_queue.sh now uses `-t =name`.)
+- **fa_S2_full** (done 2026-11-26 07:37): early stop at 37820 (best 25010, dev_1h loss 0.634), 9.13 h (0.87 s/update).
+  Test WER/CER greedy 34.97/11.05, LM (w 0.6) 32.18/13.09; dev greedy 25.32/7.43, LM 22.68/8.48. ZWNJ-insensitive test
+  WER greedy 32.71, LM 29.33. Identity tokenizer works: greedy ZWNJ-word error 100% (10h) -> 57.48%.
+- fa_S1_full started 07:38 (cap 40k updates, at most ~9.7 h + decode).
 - `REPORT.md` drafted (one page, numbers from results/ only; full-data rows pending).
 - Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
   followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.

@@ -28,7 +28,8 @@ LM: 78,005 sentences, 21,052 words; OOV rate dev 7.82%, test 10.38%. Train-test 
 | S2 Whistle | 1 h | 76.42 / 32.03 | **61.80** / 35.56 | 58.94 |
 | S1 scratch | 10 h | 89.55 / 56.75 | 83.26 / 63.28 | 81.71 |
 | S2 Whistle | 10 h | 50.56 / 15.80 | **38.85** / 16.86 | 35.10 |
-| S1 / S2 | 77.7 h | running | running | running |
+| S2 Whistle | 77.7 h | 34.97 / 11.05 | **32.18** / 13.09 | 29.33 |
+| S1 scratch | 77.7 h | running | running | running |
 
 **Sanity check: reproduction of a published Whistle result.** "Phoneme PT + subword FT", Polish 1 h. CV 11.0 is no
 longer distributed (not on MDC, HF mirrors removed), so CV 27.0 Polish with CAT's own data and LM recipe was used.
@@ -47,8 +48,9 @@ removing dev/test sentences: **42.11**.
 3. ZWNJ: the CV 27.0 Persian clip TSVs have ZWNJ deleted ("می‌شد" -> "میشد"; we restore it from
    validated_sentences.tsv), and CAT's SentencePiece tokenizer (default NFKC normalization) turns ZWNJ into a space,
    so the 1 h/10 h models cannot emit it. Every test word with ZWNJ (3,015) is then wrong in greedy decoding; ignoring
-   ZWNJ lowers S2 10 h test WER from 50.56 to 44.55 (greedy) and 38.85 to 35.10 (LM). Full-data runs use a tokenizer
-   that keeps ZWNJ.
+   ZWNJ lowers S2 10 h test WER from 50.56 to 44.55 (greedy) and 38.85 to 35.10 (LM). The 77.7 h runs use a tokenizer
+   that keeps ZWNJ: S2's greedy error on ZWNJ words falls from 100% (10 h) to 57.5%; the remaining 2,285
+   space/ZWNJ-only errors reflect inconsistent spelling in the references themselves (e.g. "می روم" vs "می‌روم").
 4. The word LM lowers WER but raises CER (S2 10 h: 50.56 -> 38.85 WER, 15.80 -> 16.86 CER): with a 10.4% test OOV
    rate, every OOV word is replaced by an in-vocabulary word (OOV-word error 100% with LM vs 84.6% greedy).
 5. The most frequent S2 errors are colloquial vs formal spellings (رو->را 153x, هست->است, اون->او, یه->یک, اگه->اگر):
