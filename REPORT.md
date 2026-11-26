@@ -29,7 +29,7 @@ LM: 78,005 sentences, 21,052 words; OOV rate dev 7.82%, test 10.38%. Train-test 
 | S1 scratch | 10 h | 89.55 / 56.75 | 83.26 / 63.28 | 81.71 |
 | S2 Whistle | 10 h | 50.56 / 15.80 | **38.85** / 16.86 | 35.10 |
 | S2 Whistle | 77.7 h | 34.97 / 11.05 | **32.18** / 13.09 | 29.33 |
-| S1 scratch | 77.7 h | running | running | running |
+| S1 scratch | 77.7 h | 63.77 / 29.14 | 52.73 / 30.20 | 50.50 |
 
 **Sanity check: reproduction of a published Whistle result.** "Phoneme PT + subword FT", Polish 1 h. CV 11.0 is no
 longer distributed (not on MDC, HF mirrors removed), so CV 27.0 Polish with CAT's own data and LM recipe was used.
@@ -37,10 +37,11 @@ Test WER without LM: 66.44 (paper 69.50). With CAT's LM recipe: 15.16 (paper 8.6
 removing dev/test sentences: **42.11**.
 
 **Findings.**
-1. Pretraining matters most at low resource: at 1 h, S1 never leaves the CTC blank phase (99% WER) while S2 reaches
-   61.8% WER; at 10 h the gap is 83.3% vs 38.9%. S1's early stopping at 10 h was triggered by a plateau (dev loss
-   3.29 at 9.4k updates); CAT's Polish monolingual 10 h recipe trained ~15k updates, so S1 may be under-trained
-   under the shared schedule.
+1. Whistle pretraining helps at every size, most at low resource: at 1 h S1 never leaves the CTC blank phase (99% WER)
+   while S2 reaches 61.8%; at 10 h 83.3% vs 38.9%; at 77.7 h 52.7% vs 32.2% (LM-decoded test WER). S2 at 10 h already
+   beats S1 at 77.7 h. Caveats: S1 stopped on a plateau at 10 h (dev loss 3.29 at 9.4k updates; CAT's Polish
+   monolingual 10 h recipe ran ~15k) and hit the 40k-update cap at 77.7 h while still improving slowly (dev loss 1.63
+   -> 1.59 over the last 10k updates), so S1 is somewhat under-trained under the shared budget.
 2. CAT's cv-lang10 LM recipe trains the 4-gram on (validated ∪ train) minus dev/test *clips*, so on CV 27.0 Polish
    the LM text contains 73.3% of the test sentences (test OOV 2.1% vs 13.7% clean). With the same acoustic model the
    LM-decoded WER rises from 15.16% to 42.11% when those sentences are removed. Most of the published 1 h LM gain
@@ -56,5 +57,5 @@ removing dev/test sentences: **42.11**.
 5. The most frequent S2 errors are colloquial vs formal spellings (رو->را 153x, هست->است, اون->او, یه->یک, اگه->اگر):
    CV Persian mixes registers, and both the references and the LM text contain both forms.
 
-**Next steps.** Finish the 77.7 h runs; phoneme baselines P0/P1 with Prof. Ou's lexicon/WFST pipeline (adding
+**Next steps.** Phoneme baselines P0/P1 with Prof. Ou's lexicon/WFST pipeline (adding
 output units for Persian phonemes missing from Whistle's inventory); a sentence-disjoint LM corpus beyond CV text.

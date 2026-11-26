@@ -112,7 +112,11 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
 - **fa_S2_full** (done 2026-11-26 07:37): early stop at 37820 (best 25010, dev_1h loss 0.634), 9.13 h (0.87 s/update).
   Test WER/CER greedy 34.97/11.05, LM (w 0.6) 32.18/13.09; dev greedy 25.32/7.43, LM 22.68/8.48. ZWNJ-insensitive test
   WER greedy 32.71, LM 29.33. Identity tokenizer works: greedy ZWNJ-word error 100% (10h) -> 57.48%.
-- fa_S1_full started 07:38 (cap 40k updates, at most ~9.7 h + decode).
+- **fa_S1_full** (done 2026-11-26 17:37): STEP CAP at 40260 (best 35380, dev_1h loss 1.577; 1.63 at 28.7k -> 1.59 at
+  38.4k, LR 3.75e-6), 9.74 h. Test WER/CER greedy 63.77/29.14, LM (w 0.4) 52.73/30.20; dev greedy 53.02/23.02,
+  LM 40.90/22.33. ZWNJ-insensitive test WER greedy 61.93, LM 50.50.
+- **All planned runs (S1/S2 at 1h, 10h, 77.7h + Polish reproduction) are done.** GPU idle since 17:37 on 2026-11-26.
+  Nothing synced to Drive yet (no rclone remote configured).
 - `REPORT.md` drafted (one page, numbers from results/ only; full-data rows pending).
 - Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
   followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.
