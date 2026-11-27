@@ -38,6 +38,14 @@ WHISTLE_SMALL = DATA / "pretrained/whistle-small/best-3.pt"
 
 BPE_SIZE = 500
 EFFECTIVE_BATCH = 128
+# CAT's own from-scratch (monolingual) subword recipe, Polish (egs/cv-lang10/exp/Monolingual/pl/):
+#   Mono._subword_1h : Adam lr 1e-5 (config.json:31), batch 80 (hyper-p.json:25), check_freq 10 (hyper-p.json:26)
+#   Mono._subword_10h: Adam lr 3e-5 (config.json:31), batch 160 (hyper-p.json:25), check_freq 51 (hyper-p.json:26)
+#   both: betas (0.9, 0.98), wd 1e-6 (config.json:29-36); SchedulerEarlyStop min_step 2020, n_tol 5, gamma 0.5,
+#   stop_lr 1e-6 (config.json:21-26); no warmup; no step/epoch budget (early stopping only).
+# check_freq there is ~1 epoch of their Polish set, so we use 1 epoch of ours. Micro-batches fit 24 GB.
+MONO_RECIPE = {"1h": {"lr": 1e-5, "batch": 80, "micro": 20}, "10h": {"lr": 3e-5, "batch": 160, "micro": 32}}
+MONO_MIN_STEP = 2020
 MICRO_BATCH = 32
 STEP_CAP = {"10m": 6000, "1h": 6000, "10h": 20000, "full": 40000}
 SPECAUG = {"freq_mask_width_range": 0.35, "num_freq_mask": 2, "num_time_mask": 10, "time_mask_width_range": 0.05}
@@ -98,6 +106,7 @@ def write_exp(run_id: str, lang: str, system: str, train_set: str, dev_set: str,
               seed: int, check_freq: int, init_model: Path | None, scheduler: dict, micro_batch: int) -> Path:
     exp = DATA / "exp" / run_id
     exp.mkdir(parents=True, exist_ok=True)
+    assert EFFECTIVE_BATCH % micro_batch == 0, (EFFECTIVE_BATCH, micro_batch)
     fold = EFFECTIVE_BATCH // micro_batch
     from cat.shared import tokenizer as tknz
     vocab = tknz.load(str(tok)).vocab_size

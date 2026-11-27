@@ -35,7 +35,8 @@ def make_sanity_set(lang: str, n: int = 50) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--system", choices=["S1", "S2", "PL"], required=True)
+    ap.add_argument("--system", choices=["S1", "S1mono", "S2", "PL"], required=True,
+                    help="S1mono = S1 with CAT's own from-scratch recipe schedule (catrun.MONO_RECIPE)")
     ap.add_argument("--lang", choices=["fa", "pl"], required=True)
     ap.add_argument("--size", choices=["10m", "1h", "10h", "full"], required=True)
     ap.add_argument("--seed", type=int, default=0)
@@ -46,6 +47,11 @@ def main() -> None:
     tok = catrun.ensure_tokenizer(a.lang, train_set, a.size)  # same tokenizer for S1/S2 at this size
     scheduler = json.loads(json.dumps(catrun.SCHEDULER))
     micro = catrun.MICRO_BATCH
+    if a.system == "S1mono":
+        r = catrun.MONO_RECIPE[a.size]  # KeyError for sizes CAT has no from-scratch recipe for
+        scheduler["optimizer"]["kwargs"]["lr"] = r["lr"]
+        scheduler["kwargs"]["min_step"] = catrun.MONO_MIN_STEP
+        catrun.EFFECTIVE_BATCH, micro = r["batch"], r["micro"]
     if a.sanity:
         train_set = dev_set = make_sanity_set(a.lang)
         run_id = f"sanity_{a.lang}_{a.system}"

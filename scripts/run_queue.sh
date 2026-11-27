@@ -1,7 +1,8 @@
 #!/bin/bash
 # Run trainings + decode/eval back to back (each step is idempotent / resumable).
 #   tmux new -s queue 'bash scripts/run_queue.sh "S2 fa 1h" "S1 fa 1h" "PL pl 1h" "S2 fa 10h" "S1 fa 10h"'
-# Optional: WAIT_FOR=<tmux session> waits until that session has ended first.
+# Optional: WAIT_FOR=<tmux session> waits until that session has ended first;
+#           SYNC=1 runs scripts/sync_drive.sh --essentials after each finished run.
 set -u
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 PY=$HOME/venvs/asr/bin/python
@@ -26,4 +27,12 @@ for job in "$@"; do
       || echo "$(date '+%F %T') FAILED decode $run_id" >>"$LOG"
   fi
   echo "$(date '+%F %T') DONE $run_id $(grep -h "WER" "$DATA/logs/decode_$run_id.log" | tr '\n' ' ')" >>"$LOG"
+  if [ "${SYNC:-0}" = 1 ]; then  # Drive backup after each run; log kept outside the synced tree
+    mkdir -p "$HOME/sync_logs"
+    if bash "$REPO/scripts/sync_drive.sh" --essentials >"$HOME/sync_logs/sync_$run_id.log" 2>&1; then
+      echo "$(date '+%F %T') SYNCED $run_id" >>"$LOG"
+    else
+      echo "$(date '+%F %T') SYNC FAILED $run_id (see ~/sync_logs/sync_$run_id.log)" >>"$LOG"
+    fi
+  fi
 done
