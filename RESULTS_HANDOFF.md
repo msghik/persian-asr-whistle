@@ -1,6 +1,6 @@
 # Results handoff: Persian subword ASR baselines (S1/S2) + Polish Whistle reproduction
 
-Status as of 2026-11-27. Every number below comes from a finished run (`results/results.csv`,
+Status as of 2026-11-27 (S1-mono added 15:30 UTC). Every number below comes from a finished run (`results/results.csv`,
 `results/results_rescored.csv`, `results/analysis_*`, `~/persian_asr_data/exp/*/run_info.json`). None are estimated.
 Context: PhD application to Prof. Zhijian Ou (Tsinghua SPMI). He asked for subword- and phoneme-based Persian ASR
 baselines; this covers the **subword** part (S1, S2). Report due about 2026-12-10. Draft one-pager: `REPORT.md`.
@@ -72,6 +72,8 @@ test 10.38%. The same LM is used by every Persian system.
 | S2 Whistle | 10h | 50.56 / 15.80 | **38.85** / 16.86 | 0.6 | 44.55 | 35.10 |
 | S1 scratch | 77.7h | 63.77 / 29.14 | 52.73 / 30.20 | 0.4 | 61.93 | 50.50 |
 | S2 Whistle | 77.7h | 34.97 / 11.05 | **32.18** / 13.09 | 0.6 | 32.71 | 29.33 |
+| S1-mono (CAT from-scratch schedule) | 1h | 99.24 / 94.67 | 99.24 / 94.05 | 0.2 | 99.08 | 99.27 |
+| S1-mono (CAT from-scratch schedule) | 10h | 90.06 / 59.41 | 84.90 / 64.18 | 0.2 | 88.11 | 83.48 |
 
 ### Dev
 | system | train | greedy WER / CER | LM WER / CER | greedy WER ZWNJ-ins. | LM WER ZWNJ-ins. |

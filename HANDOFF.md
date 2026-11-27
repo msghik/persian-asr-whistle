@@ -23,8 +23,10 @@ He wants to see progress before supporting the application.
   - Prepared sets (`prep/{fa,pl}/<set>/{wav.scp,text,meta.tsv}`), data cards, LM text, logs.
   - **Not on Drive** (rebuildable): fbank features, intermediate checkpoints, raw CV audio, Kaldi/KenLM builds.
 - **Subword baselines DONE** (S1/S2 at 1h, 10h, 77.7h; Polish reproduction): see `RESULTS_HANDOFF.md`.
-  - **S1-mono:** S1 rerun with CAT's own from-scratch recipe schedule (`Mono._subword_10h`/`_1h`), so each mode uses
-    its own recipe. Status and numbers: `PROGRESS.md` and `results/results.csv` (run ids `fa_S1mono_*`).
+  - **S1-mono (done 2026-11-27, synced to Drive):** S1 rerun with CAT's own from-scratch recipe schedule
+    (`Mono._subword_10h`/`_1h`), so each mode uses its own recipe.
+    - Test LM WER: 84.90 (10h) and 99.24 (1h), vs 83.26 / 99.25 for S1 with the shared schedule.
+    - CAT's schedule does not improve S1. Run ids `fa_S1mono_*` in `results/results.csv`; details in PROGRESS.md.
 - Decisions taken on the lease (the user delegated them; all documented in PROGRESS.md):
   - **Clean training pool:** no dev/test sentence, normalized text or speaker in training. Whistle's convention leaks
     97.1% of test sentences.

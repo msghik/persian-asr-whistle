@@ -116,8 +116,44 @@ eval every epoch on fixed dev_1h, SchedulerEarlyStop(min_step 2000, n_tol 5, gam
   38.4k, LR 3.75e-6), 9.74 h. Test WER/CER greedy 63.77/29.14, LM (w 0.4) 52.73/30.20; dev greedy 53.02/23.02,
   LM 40.90/22.33. ZWNJ-insensitive test WER greedy 61.93, LM 50.50.
 - **All planned runs (S1/S2 at 1h, 10h, 77.7h + Polish reproduction) are done.** GPU idle since 17:37 on 2026-11-26.
-  Nothing synced to Drive yet (no rclone remote configured).
-- `REPORT.md` drafted (one page, numbers from results/ only; full-data rows pending).
+- **Drive backup (2026-11-27):** user configured rclone remote `gdrive`; `sync_drive.sh --essentials` uploaded 3.15 GB;
+  `rclone check` = 1,364 matching files, 0 differences (only the live sync log itself failed to copy; sync logs now
+  go to ~/sync_logs outside the synced tree).
+
+### S1-mono: S1 with CAT's own from-scratch recipe schedule (2026-11-27, user request)
+CAT Polish monolingual subword configs (`egs/cv-lang10/exp/Monolingual/pl/`):
+- `Mono._subword_1h`:
+  - Adam lr **1e-5** (`config.json:31`), betas (0.9, 0.98), wd 1e-6 (`config.json:29-36`).
+  - SchedulerEarlyStop min_step 2020, n_tol 5, gamma 0.5, stop_lr 1e-6 (`config.json:21-26`).
+  - Batch **80** (`hyper-p.json:25`), check_freq 10 (`hyper-p.json:26`).
+- `Mono._subword_10h`: same, except lr **3e-5** (`config.json:31`), batch **160** (`hyper-p.json:25`), check_freq 51
+  (`hyper-p.json:26`).
+- Both:
+  - No warmup; no step/epoch budget, early stopping only.
+  - Reference runs: ~2.2k (1h) and ~15k (10h) updates on 1x RTX 3090, "10 hours" each (`readme.md:16`, monitor.png).
+  - Reference WERs with LM: 98.38 (1h) and 59.43 (10h) (`readme.md:52`).
+- **Note:** at 10h CAT's from-scratch lr equals our shared lr (3e-5); the difference is batch 160 vs 128 and min_step
+  2020 vs 2000. Only 1h really differs (lr 1e-5, batch 80).
+
+Our settings (`catrun.MONO_RECIPE`, system `S1mono`): those values; micro-batches 20x4 (1h) and 32x5 (10h).
+- check_freq = 1 epoch of our data (13 / 63 steps), since CAT's 10 / 51 are ~1 epoch of its Polish set.
+- Data, tokenizer, normalization, dev_1h, LM and decoding are unchanged. Safety caps 6k / 20k were not reached.
+- Estimated before starting, from the old S1 10h at 0.93 s/update: ~1.16 s/update for 10h. Measured: 1.11 s/update.
+
+| run | final / best step | best dev_1h loss | stop | train time | test greedy WER/CER | test LM WER/CER (w) | LM WER ZWNJ-ins. |
+|---|---|---|---|---|---|---|---|
+| fa_S1mono_10h | 8064 / 7938 | 3.390 | early stop | 2.55 h | 90.06 / 59.41 | 84.90 / 64.18 (0.2) | 83.48 |
+| fa_S1mono_1h | 2327 / 988 | 5.760 | early stop | 0.61 h | 99.24 / 94.67 | 99.24 / 94.05 (0.2) | 99.27 |
+| (old) fa_S1_10h | 9401 / 9164 | 3.293 | early stop | 2.42 h | 89.55 / 56.75 | 83.26 / 63.28 (0.3) | 81.71 |
+| (old) fa_S1_1h | 2232 / 320 | 5.728 | early stop | 0.91 h | 99.23 / 94.69 | 99.25 / 94.08 (0.2) | 99.28 |
+
+- Dev: S1mono 10h greedy 86.67/55.54, LM 80.03/59.63; S1mono 1h greedy 98.67/94.18, LM 98.45/93.46.
+- **Conclusion:** CAT's own from-scratch schedule does not improve S1; it is slightly worse at 10h and identical at 1h.
+  S1's weakness comes from training from scratch on little data, not from the shared schedule.
+- Both S1mono runs chose LM weight 0.2, the bottom of the 0.2-0.9 grid; the sweep extends only upward, so lower
+  weights are untested.
+- Both runs were synced to Drive automatically after decoding (queue.log: SYNCED 14:26 and 15:27).
+- `REPORT.md` now shows both S1 variants (S1-shared, S1-mono) and states that each mode uses its own recipe schedule.
 - Queue (tmux `queue`, `scripts/run_queue.sh`): S2 fa 1h -> S1 fa 1h -> PL pl 1h -> S2 fa 10h -> S1 fa 10h, each
   followed by decode_eval (fa: LM fa_clean; pl: pl_cat and pl_clean). Log: ~/persian_asr_data/logs/queue.log.
   Estimated worst case (step caps, 1.3-1.4 s/update): ~18.5 GPU-h -> done ~Nov 26 morning; then full-data runs if time.

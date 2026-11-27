@@ -11,6 +11,14 @@ fa_S1_full_bpe500_s0,S1,fa,full,fa_full_bpe500_id.tknz,dev,fa_clean,40.9,22.33,3
 fa_S1_full_bpe500_s0,S1,fa,full,fa_full_bpe500_id.tknz,dev,greedy,53.02,23.02,51.09,22.45
 fa_S1_full_bpe500_s0,S1,fa,full,fa_full_bpe500_id.tknz,test,fa_clean,52.73,30.2,50.5,29.61
 fa_S1_full_bpe500_s0,S1,fa,full,fa_full_bpe500_id.tknz,test,greedy,63.77,29.14,61.93,28.52
+fa_S1mono_10h_bpe500_s0,S1mono,fa,10h,fa_10h_bpe500.tknz,dev,fa_clean,80.03,59.63,78.14,59.24
+fa_S1mono_10h_bpe500_s0,S1mono,fa,10h,fa_10h_bpe500.tknz,dev,greedy,86.67,55.54,83.76,55.0
+fa_S1mono_10h_bpe500_s0,S1mono,fa,10h,fa_10h_bpe500.tknz,test,fa_clean,84.9,64.18,83.48,63.82
+fa_S1mono_10h_bpe500_s0,S1mono,fa,10h,fa_10h_bpe500.tknz,test,greedy,90.06,59.41,88.11,59.02
+fa_S1mono_1h_bpe500_s0,S1mono,fa,1h,fa_1h_bpe500.tknz,dev,fa_clean,98.45,93.46,98.52,93.37
+fa_S1mono_1h_bpe500_s0,S1mono,fa,1h,fa_1h_bpe500.tknz,dev,greedy,98.67,94.18,98.52,94.1
+fa_S1mono_1h_bpe500_s0,S1mono,fa,1h,fa_1h_bpe500.tknz,test,fa_clean,99.24,94.05,99.27,93.99
+fa_S1mono_1h_bpe500_s0,S1mono,fa,1h,fa_1h_bpe500.tknz,test,greedy,99.24,94.67,99.08,94.61
 fa_S2_10h_bpe500_s0,S2,fa,10h,fa_10h_bpe500.tknz,dev,fa_clean,29.21,11.91,25.16,11.1
 fa_S2_10h_bpe500_s0,S2,fa,10h,fa_10h_bpe500.tknz,dev,greedy,43.11,12.43,35.23,11.3
 fa_S2_10h_bpe500_s0,S2,fa,10h,fa_10h_bpe500.tknz,test,fa_clean,38.85,16.86,35.1,15.94
